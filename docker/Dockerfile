@@ -1,10 +1,10 @@
-ARG PYTHON_VERSION=3.9
+ARG PYTHON_VERSION=3.11
 
 FROM docker.io/python:${PYTHON_VERSION}-slim
 
 # Install libmagic. We don't need to install libolm, because we're installing it with a
 # wheel from gitlab.matrix.org later, which comes with libolm already compiled.
-RUN apt-get update -qq && apt-get install -qq libmagic1
+RUN apt-get update -qq && apt-get install -qq libmagic1 c-icap && apt-get clean
 
 # Copy the necessary project files into the image.
 COPY setup.cfg pyproject.toml README.md /
