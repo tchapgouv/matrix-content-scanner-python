@@ -83,6 +83,7 @@ _config_schema = {
                 "script": {"type": "string"},
                 "temp_directory": {"type": "string"},
                 "removal_command": {"type": "string"},
+                "check_claimed_mimetype": {"type": "boolean"},
                 "allowed_mimetypes": {"type": "array", "items": {"type": "string"}},
             },
         },
@@ -139,6 +140,7 @@ class ScanConfig:
     script: str
     temp_directory: str
     removal_command: str = "rm"
+    check_claimed_mimetype: bool = True
     allowed_mimetypes: Optional[List[str]] = None
 
 

@@ -82,6 +82,8 @@ class Scanner:
 
         self._max_size_to_cache = mcs.config.result_cache.max_file_size
 
+        self._check_claimed_mimetype = mcs.config.scan.check_claimed_mimetype
+
         # List of MIME types we should allow. If None, we don't fail files based on their
         # MIME types (besides comparing it with the Content-Type header from the server
         # for unencrypted files).
@@ -526,7 +528,7 @@ class Scanner:
         # Check if the MIME type is matching the one that's expected, but only if the file
         # is not encrypted (because otherwise we'll always have 'application/octet-stream'
         # in the Content-Type header regardless of the actual MIME type of the file).
-        if encrypted is False and detected_mimetype != claimed_mimetype:
+        if self._check_claimed_mimetype and encrypted is False and detected_mimetype != claimed_mimetype:
             logger.error(
                 "Mismatching MIME type (%s) and Content-Type header (%s)",
                 detected_mimetype,
