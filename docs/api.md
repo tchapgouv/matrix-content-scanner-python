@@ -35,6 +35,7 @@ status code of the response for each scenario:
 | 403         | `MCS_MEDIA_NOT_CLEAN`         | The server scanned the downloaded media but the antivirus script returned a non-zero exit code.                                                                                   |
 | 403         | `MCS_MIME_TYPE_FORBIDDEN`     | The Mime type is not in the allowed list of Mime types.                                                                                                                           |
 | 403         | `MCS_BAD_DECRYPTION`          | The provided `encrypted_body` could not be decrypted, or the encrypted file could not be decrypted. The client should request the public key of the server and then retry (once). |
+| 429         | `M_LIMIT_EXCEEDED`            | The media repository rate limit has been reached.                                                                                                                                |
 | 500         | `M_UNKNOWN`                   | The server experienced an unexpected error.                                                                                                                                       |
 | 502         | `MCS_MEDIA_REQUEST_FAILED`    | The server failed to request media from the media repo.                                                                                                                           |
 

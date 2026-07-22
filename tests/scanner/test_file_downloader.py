@@ -144,6 +144,38 @@ class FileDownloaderTestCase(IsolatedAsyncioTestCase):
         self.assertTrue(args[0].startswith("http://my-site.com/"))
         self.assertIn("/_matrix/client/v1/media/download/" + MEDIA_PATH, args[0])
 
+    async def test_download_rate_limited(self) -> None:
+        """A media repository rate limit should be returned to the client as a 429."""
+        self.media_status = 429
+        self.media_body = (
+            b'{"errcode":"M_LIMIT_EXCEEDED","error":"Rate Limited",'
+            b'"mr_errcode":"M_LIMIT_EXCEEDED"}'
+        )
+        self._set_headers({"content-type": ["application/json"]})
+
+        with self.assertRaises(ContentScannerRestError) as cm:
+            await self.downloader.download_file(
+                MEDIA_PATH, auth_header="Bearer access_token"
+            )
+
+        self.assertEqual(cm.exception.http_status, 429)
+        self.assertEqual(cm.exception.reason, "M_LIMIT_EXCEEDED")
+        self.assertEqual(cm.exception.info, "Rate Limited")
+
+    async def test_unknown_429_response_is_bad_gateway(self) -> None:
+        """An unrelated upstream 429 should remain a generic download failure."""
+        self.media_status = 429
+        self.media_body = b'{"errcode":"M_UNKNOWN","error":"Unexpected error"}'
+        self._set_headers({"content-type": ["application/json"]})
+
+        with self.assertRaises(ContentScannerRestError) as cm:
+            await self.downloader.download_file(
+                MEDIA_PATH, auth_header="Bearer access_token"
+            )
+
+        self.assertEqual(cm.exception.http_status, 502)
+        self.assertEqual(cm.exception.reason, "MCS_MEDIA_REQUEST_FAILED")
+
     async def test_no_base_url(self) -> None:
         """Tests that configuring a base homeserver URL means files are downloaded from
         that homeserver (rather than the one the files were uploaded to) and .well-known

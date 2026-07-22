@@ -21,6 +21,8 @@ class ErrCode(str, Enum):
     # - the access token has been soft logged out.
     # - [Added in v1.3] the access token needs to be refreshed.
     UNKNOWN_TOKEN = "M_UNKNOWN_TOKEN"
+    # The media repository rate limit has been reached.
+    LIMIT_EXCEEDED = "M_LIMIT_EXCEEDED"
     # The file failed the scan.
     NOT_CLEAN = "MCS_MEDIA_NOT_CLEAN"
     # The file could not be retrieved from the homeserver.

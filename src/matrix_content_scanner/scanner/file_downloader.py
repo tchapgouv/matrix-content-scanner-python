@@ -254,6 +254,27 @@ class FileDownloader:
                 except (json.decoder.JSONDecodeError, KeyError):
                     pass
 
+            if code == HTTPStatus.TOO_MANY_REQUESTS:
+                try:
+                    err = json.loads(body)
+                    if err["errcode"] == ErrCode.LIMIT_EXCEEDED:
+                        info = err.get("error", "Rate Limited")
+                        if not isinstance(info, str):
+                            info = "Rate Limited"
+
+                        raise ContentScannerRestError(
+                            HTTPStatus.TOO_MANY_REQUESTS,
+                            ErrCode.LIMIT_EXCEEDED,
+                            info,
+                        )
+                except (
+                    json.decoder.JSONDecodeError,
+                    KeyError,
+                    TypeError,
+                    UnicodeDecodeError,
+                ):
+                    pass
+
             if code == 404:
                 raise _PathNotFoundException
 
