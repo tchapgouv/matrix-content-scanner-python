@@ -266,7 +266,7 @@ class FileDownloader:
                 if not isinstance(errcode, str) or not isinstance(info, str):
                     errcode = ErrCode.UNKNOWN
                     info = "Unexpected error"
-                    
+
             except Exception as e:
                 logger.error("Failed to parse error response: %s", e)
                 raise ContentScannerRestError(code, ErrCode.UNKNOWN, "Unexpected error")
