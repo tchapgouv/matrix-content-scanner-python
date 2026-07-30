@@ -254,34 +254,27 @@ class FileDownloader:
                 except (json.decoder.JSONDecodeError, KeyError):
                     pass
 
-            if code == HTTPStatus.TOO_MANY_REQUESTS:
-                try:
-                    err = json.loads(body)
-                    if err["errcode"] == ErrCode.LIMIT_EXCEEDED:
-                        info = err.get("error", "Rate Limited")
-                        if not isinstance(info, str):
-                            info = "Rate Limited"
-
-                        raise ContentScannerRestError(
-                            HTTPStatus.TOO_MANY_REQUESTS,
-                            ErrCode.LIMIT_EXCEEDED,
-                            info,
-                        )
-                except (
-                    json.decoder.JSONDecodeError,
-                    KeyError,
-                    TypeError,
-                    UnicodeDecodeError,
-                ):
-                    pass
-
             if code == 404:
                 raise _PathNotFoundException
 
+            try:
+                err = json.loads(body)
+                info = err.get("error")
+                errcode = err.get("errcode")
+
+                # Only forward well-formed error fields from the remote server.
+                if not isinstance(errcode, str) or not isinstance(info, str):
+                    errcode = ErrCode.UNKNOWN
+                    info = "Unexpected error"
+                    
+            except Exception as e:
+                logger.error("Failed to parse error response: %s", e)
+                raise ContentScannerRestError(code, ErrCode.UNKNOWN, "Unexpected error")
+
             raise ContentScannerRestError(
-                HTTPStatus.BAD_GATEWAY,
-                ErrCode.REQUEST_FAILED,
-                "The remote server responded with an error",
+                code,
+                errcode,
+                info,
             )
 
         # Check that we have the right amount of Content-Type headers (so we don't get

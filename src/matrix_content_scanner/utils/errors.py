@@ -10,7 +10,7 @@ from matrix_content_scanner.utils.constants import ErrCode
 class ContentScannerRestError(Exception):
     """An error that is converted into an error response by the REST resource."""
 
-    def __init__(self, http_status: int, reason: ErrCode, info: Optional[str]) -> None:
+    def __init__(self, http_status: int, reason: str, info: Optional[str]) -> None:
         super(Exception, self).__init__(info)
         self.http_status = http_status
         self.reason = reason
