@@ -50,7 +50,7 @@ def web_handler(
         The wrapper to run for this function.
     """
 
-    def handle_error(status: int, reason: ErrCode, info: Optional[str]) -> web.Response:
+    def handle_error(status: int, reason: str, info: Optional[str]) -> web.Response:
         """Turns an error with the given parameters into an aiohttp Response.
 
         Args:

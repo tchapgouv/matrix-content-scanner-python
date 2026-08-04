@@ -63,3 +63,24 @@ class TestScanHandler(AioHTTPTestCase):
                 self.assertEqual(resp.status, 502)
                 body = await resp.json()
                 self.assertEqual(body["reason"], "MCS_MEDIA_REQUEST_FAILED", body)
+
+    async def test_media_repository_rate_limit(self) -> None:
+        """A media repository rate limit should be presented as a 429 to the client."""
+        patch_downloader = patch.object(
+            self.scanner.file_downloader,
+            "_get",
+            return_value=(
+                HTTPStatus.TOO_MANY_REQUESTS,
+                b'{"errcode":"M_LIMIT_EXCEEDED","error":"Rate Limited"}',
+                CIMultiDict({"content-type": "application/json"}),
+            ),
+        )
+
+        with patch_downloader:
+            async with self.client.get(
+                f"/_matrix/media_proxy/unstable/download/{SERVER_NAME}/media"
+            ) as resp:
+                self.assertEqual(resp.status, 429)
+                body = await resp.json()
+                self.assertEqual(body["reason"], "M_LIMIT_EXCEEDED", body)
+                self.assertEqual(body["info"], "Rate Limited", body)

@@ -144,6 +144,55 @@ class FileDownloaderTestCase(IsolatedAsyncioTestCase):
         self.assertTrue(args[0].startswith("http://my-site.com/"))
         self.assertIn("/_matrix/client/v1/media/download/" + MEDIA_PATH, args[0])
 
+    async def test_download_limit_exceeded(self) -> None:
+        """M_LIMIT_EXCEEDED should be forwarded to the client as a 429."""
+        self.media_status = 429
+        self.media_body = (
+            b'{"errcode":"M_LIMIT_EXCEEDED","error":"Rate Limited",'
+            b'"mr_errcode":"M_LIMIT_EXCEEDED"}'
+        )
+        self._set_headers({"content-type": ["application/json"]})
+
+        with self.assertRaises(ContentScannerRestError) as cm:
+            await self.downloader.download_file(
+                MEDIA_PATH, auth_header="Bearer access_token"
+            )
+
+        self.assertEqual(cm.exception.http_status, 429)
+        self.assertEqual(cm.exception.reason, "M_LIMIT_EXCEEDED")
+        self.assertEqual(cm.exception.info, "Rate Limited")
+
+    async def test_unknown_429_response_is_forwarded(self) -> None:
+        """An unrelated upstream 429 response should be forwarded to the client."""
+        self.media_status = 429
+        self.media_body = b'{"errcode":"M_UNKNOWN","error":"Unexpected error"}'
+        self._set_headers({"content-type": ["application/json"]})
+
+        with self.assertRaises(ContentScannerRestError) as cm:
+            await self.downloader.download_file(
+                MEDIA_PATH, auth_header="Bearer access_token"
+            )
+
+        self.assertEqual(cm.exception.http_status, 429)
+        self.assertEqual(cm.exception.reason, "M_UNKNOWN")
+        self.assertEqual(cm.exception.info, "Unexpected error")
+
+    async def test_invalid_error_fields_use_unknown_error(self) -> None:
+        """Invalid upstream error fields should produce a safe fallback error."""
+        self.media_status = 429
+        self.media_body = b'{"errcode":null,"error":{}}'
+        self._set_headers({"content-type": ["application/json"]})
+
+        with self.assertRaises(ContentScannerRestError) as cm:
+            await self.downloader.download_file(
+                MEDIA_PATH,
+                auth_header="Bearer access_token",
+            )
+
+        self.assertEqual(cm.exception.http_status, 429)
+        self.assertEqual(cm.exception.reason, "M_UNKNOWN")
+        self.assertEqual(cm.exception.info, "Unexpected error")
+
     async def test_no_base_url(self) -> None:
         """Tests that configuring a base homeserver URL means files are downloaded from
         that homeserver (rather than the one the files were uploaded to) and .well-known
